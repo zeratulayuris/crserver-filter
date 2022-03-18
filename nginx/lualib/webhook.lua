@@ -9,23 +9,15 @@
 
 local _M = {}
 
-function call(url, body)
-
-    local data = ngx.var.request_body
-
-    ngx.req.read_body()
-
-    local req = ngx.var.request_body
-    if req == nil then
+function sendhook(premature)
+    if premature then
         return
     end
 
-    if string.find(req, "DevDepot_commitObjects") then
-        local http = require "resty.http"
-        local httpc = http.new()
-        local res, err = httpc:request_uri(url, {
+    local httpc = require("resty.http").new()
+        local res, err = httpc:request_uri(hookurl, {
             method = "POST",
-            body = body,
+            body = hookbody,
             headers = {
             ["Content-Type"] = "application/x-www-form-urlencoded",
             },
@@ -37,5 +29,29 @@ function call(url, body)
             ngx.log(ngx.WARN, "error calling "..url)
             return
         end
+  
+end
+
+function _M.call(url, body)
+
+    if ngx.var.commitfiltered == "true" then
+        return
+    end
+
+    if  ngx.status == ngx.HTTP_BAD_REQUEST then
+        return
+    end
+
+    hookurl =  url
+    hookbody = body
+    local req = ngx.var.request_body
+    if req == nil then
+        return
+    end
+
+    if string.find(req, "DevDepot_commitObjects") then
+        ngx.timer.at(0, sendhook)
     end
 end
+
+return _M
