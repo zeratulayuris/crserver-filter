@@ -9,7 +9,7 @@
 
 local _M = {}
 
-function sendhook(premature)
+function sendhook(premature, hookurl, hookbody)
     if premature then
         return
     end
@@ -42,15 +42,13 @@ function _M.call(url, body)
         return
     end
 
-    hookurl =  url
-    hookbody = body
     local req = ngx.var.request_body
     if req == nil then
         return
     end
 
     if string.find(req, "DevDepot_commitObjects") then
-        ngx.timer.at(0, sendhook)
+        ngx.timer.at(0, sendhook, url, body)
     end
 end
 
